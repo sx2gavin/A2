@@ -5,7 +5,8 @@
 #include <QGLShaderProgram>
 #include <QMatrix4x4>
 #include <QtGlobal>
-// #include "algebra.hpp"
+#include <QVector>
+#include "algebra.hpp"
 
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 1, 0))
 #include <QOpenGLBuffer>
@@ -13,6 +14,7 @@
 #else 
 #include <QGLBuffer>
 #endif
+
 
 class Viewer : public QGLWidget {
     
@@ -64,6 +66,13 @@ protected:
     // Call this before you begin drawing. Width and height are the width
     // and height of the GL window.
     void draw_init();
+	
+	// define the geometry in this function.
+	void setup_geometry();
+
+	// Translate from 3d to 2d
+	void transform_points();
+
 private:
 
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 1, 0))
@@ -76,6 +85,12 @@ private:
     QGLShaderProgram mProgram;
 
     int mColorLocation;
+
+	QVector<QVector3D> points_3d;
+	QVector<QVector2D> points_2d;
+	
+	Qt::MouseButton pressedMouseButton;
+	int prePos;
     
     // *** Fill me in ***
     // You will want to declare some more matrices here

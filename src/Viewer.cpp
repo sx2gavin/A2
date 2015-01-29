@@ -23,6 +23,7 @@ Viewer::Viewer(const QGLFormat& format, QWidget *parent)
 #endif
 {
     // Nothing to do here right now.
+	setup_geometry();
 }
 
 Viewer::~Viewer() {
@@ -46,6 +47,44 @@ void Viewer::set_perspective(double fov, double aspect,
 void Viewer::reset_view()
 {
     // Fill me in!
+}
+
+void Viewer::setup_geometry() {
+	
+	points_3d << QVector3D(0.0, 10.0, 0) << QVector3D(0.0, -10.0, 0.0)
+	<< QVector3D(10.0, 0.0, 0.0) << QVector3D(-10.0, 0.0, 0.0)
+	<< QVector3D(0.0, 0.0, 10.0) << QVector3D(0.0, 0.0, -10.0)
+	<< QVector3D(-1.0, 1.0, -1.0) << QVector3D(-1.0, 1.0, 1.0)
+	<< QVector3D(-1.0, 1.0, -1.0) << QVector3D(1.0, 1.0, -1.0)
+	<< QVector3D(-1.0, 1.0, -1.0) << QVector3D(-1.0, -1.0, -1.0)
+	<< QVector3D(-1.0, -1.0, 1.0) << QVector3D(-1.0, 1.0, 1.0)
+	<< QVector3D(-1.0, -1.0, 1.0) << QVector3D(-1.0, -1.0, -1.0)
+	<< QVector3D(-1.0, -1.0, 1.0) << QVector3D(1.0, -1.0, 1.0)
+	<< QVector3D(1.0, 1.0, 1.0) << QVector3D(-1.0, 1.0, 1.0)
+	<< QVector3D(1.0, 1.0, 1.0) << QVector3D(1.0, -1.0, 1.0)
+	<< QVector3D(1.0, 1.0, 1.0) << QVector3D(1.0, 1.0, -1.0)
+	<< QVector3D(1.0, -1.0, -1.0) << QVector3D(-1.0, -1.0, -1.0)
+	<< QVector3D(1.0, -1.0, -1.0) << QVector3D(1.0, 1.0, -1.0)
+	<< QVector3D(1.0, -1.0, -1.0) << QVector3D(1.0, -1.0, 1.0);
+
+	m_projection.setToIdentity();
+	m_model.setToIdentity();
+	m_view.setToIdentity();
+	
+	m_model.scale(0.5);
+
+}	
+
+void Viewer::transform_points() {
+	points_2d.clear();
+	QVector2D draw_point;
+	QVector3D temp_point;
+	for (int i = 0 ; i < points_3d.size(); i++) {
+		temp_point = m_model * points_3d[i];
+		draw_point.setX(temp_point.x());
+		draw_point.setY(temp_point.y());
+		points_2d.push_back(draw_point);
+	}
 }
 
 void Viewer::initializeGL() {
@@ -119,33 +158,53 @@ void Viewer::initializeGL() {
 
 void Viewer::paintGL() {    
     draw_init();
+	transform_points();
 
     // Here is where your drawing code should go.
     
     /* A few of lines are drawn below to show how it's done. */
     set_colour(QColor(1.0, 1.0, 1.0));
 
-    draw_line(QVector2D(-0.9, -0.9), 
-              QVector2D(0.9, 0.9));
-    draw_line(QVector2D(0.9, -0.9),
-              QVector2D(-0.9, 0.9));
+	for (int i = 0; i < points_2d.size(); i+=2) {
+		draw_line(points_2d[i], points_2d[i+1]);
+	}
+		
 
-    draw_line(QVector2D(-0.9, -0.9),
-              QVector2D(-0.4, -0.9));
-    draw_line(QVector2D(-0.9, -0.9), 
-              QVector2D(-0.9, -0.4));
+//    draw_line(QVector2D(-0.9, -0.9), 
+//              QVector2D(0.9, 0.9));
+//    draw_line(QVector2D(0.9, -0.9),
+//              QVector2D(-0.9, 0.9));
+//
+//    draw_line(QVector2D(-0.9, -0.9),
+//              QVector2D(-0.4, -0.9));
+//    draw_line(QVector2D(-0.9, -0.9), 
+//              QVector2D(-0.9, -0.4));
+	
+
 }
 
 void Viewer::mousePressEvent ( QMouseEvent * event ) {
     std::cerr << "Stub: button " << event->button() << " pressed\n";
+	pressedMouseButton = event->button();
 }
 
 void Viewer::mouseReleaseEvent ( QMouseEvent * event ) {
     std::cerr << "Stub: button " << event->button() << " released\n";
+	pressedMouseButton = Qt::NoButton;
 }
 
 void Viewer::mouseMoveEvent ( QMouseEvent * event ) {
     std::cerr << "Stub: Motion at " << event->x() << ", " << event->y() << std::endl;
+	if (pressedMouseButton == Qt::LeftButton) {
+		m_model.rotate(event->x() - prePos, QVector3D(1, 0, 0));
+	} else if (pressedMouseButton == Qt::MidButton) {
+		m_model.rotate(event->x() - prePos, QVector3D(0, 1, 0));
+	} else if (pressedMouseButton == Qt::RightButton) {
+		m_model.rotate(event->x() - prePos, QVector3D(0, 0, 1));
+	}
+	prePos = event->x();
+	update();
+
 }
 
 // Drawing Functions
