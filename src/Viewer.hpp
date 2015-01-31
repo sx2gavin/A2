@@ -73,6 +73,15 @@ protected:
 	// Translate from 3d to 2d
 	void transform_points();
 
+	// Rotate Matrix
+	void matrix_rotate(QMatrix4x4 matrix, const QVector3D rotation_axis, const float angle);
+
+	// Translate Matrix
+	void matrix_translate(QMatrix4x4 matrix, const QVector3D new_position);
+
+	// scale Matrix
+	void matrix_scale(QMatrix4x4 matrix, const float factor);	
+
 private:
 
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 1, 0))

@@ -8,6 +8,7 @@ QMAKE_CXXFLAGS += -W -Wall -g
 TEMPLATE = app
 TARGET = a2
 INCLUDEPATH += .
+LIBS += -lGLU
 
 # Input
 HEADERS += AppWindow.hpp Viewer.hpp 

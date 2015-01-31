@@ -79,7 +79,15 @@ void Viewer::transform_points() {
 	points_2d.clear();
 	QVector2D draw_point;
 	QVector3D temp_point;
-	for (int i = 0 ; i < points_3d.size(); i++) {
+
+	for (int i = 0 ; i < 6; i++) {
+		temp_point = points_3d[i];
+		draw_point.setX(temp_point.x());
+		draw_point.setY(temp_point.y());
+		points_2d.push_back(draw_point);
+	}
+
+	for (int i = 6 ; i < points_3d.size(); i++) {
 		temp_point = m_model * points_3d[i];
 		draw_point.setX(temp_point.x());
 		draw_point.setY(temp_point.y());
