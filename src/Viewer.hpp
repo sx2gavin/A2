@@ -15,10 +15,12 @@
 #include <QGLBuffer>
 #endif
 
+enum Mode {VIEW_ROTATE, VIEW_TRANSLATE, VIEW_PERSPECTIVE, MODEL_ROTATE, MODEL_TRANSLATE, MODEL_SCALE};
 
 class Viewer : public QGLWidget {
     
     Q_OBJECT
+
 
 public:
     Viewer(const QGLFormat& format, QWidget *parent = 0);
@@ -41,6 +43,9 @@ public:
     // Restore all the transforms and perspective parameters to their
     // original state. Set the viewport to its initial size.
     void reset_view();
+
+	// set the mode of the mouse control
+	void set_mode(Mode mode);
 
 protected:
 
@@ -74,13 +79,13 @@ protected:
 	void transform_points();
 
 	// Rotate Matrix
-	void matrix_rotate(QMatrix4x4 matrix, const QVector3D rotation_axis, const float angle);
+	void matrix_rotation(QMatrix4x4 &matrix, Qt::MouseButton mouse,  const float angle);
 
 	// Translate Matrix
-	void matrix_translate(QMatrix4x4 matrix, const QVector3D new_position);
+	void matrix_translation(QMatrix4x4 &matrix, Qt::MouseButton mouse,  const float distance);
 
 	// scale Matrix
-	void matrix_scale(QMatrix4x4 matrix, const float factor);	
+	void matrix_scale(QMatrix4x4 &matrix, Qt::MouseButton mouse, const float factor);	
 
 private:
 
@@ -100,6 +105,7 @@ private:
 	
 	Qt::MouseButton pressedMouseButton;
 	int prePos;
+	Mode mode;
     
     // *** Fill me in ***
     // You will want to declare some more matrices here

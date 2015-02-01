@@ -22,7 +22,7 @@ Viewer::Viewer(const QGLFormat& format, QWidget *parent)
     , mVertexBufferObject(QGLBuffer::VertexBuffer)
 #endif
 {
-    // Nothing to do here right now.
+	mode = MODEL_ROTATE;
 	setup_geometry();
 }
 
@@ -49,11 +49,18 @@ void Viewer::reset_view()
     // Fill me in!
 }
 
+void Viewer::set_mode(Mode mode) {
+	this->mode = mode;
+}
+
 void Viewer::setup_geometry() {
 	
-	points_3d << QVector3D(0.0, 10.0, 0) << QVector3D(0.0, -10.0, 0.0)
-	<< QVector3D(10.0, 0.0, 0.0) << QVector3D(-10.0, 0.0, 0.0)
-	<< QVector3D(0.0, 0.0, 10.0) << QVector3D(0.0, 0.0, -10.0)
+	points_3d << QVector3D(0.0, 0.0, 0.0) << QVector3D(0.0, 0.5, 0.0)
+	<< QVector3D(0.0, 0.0, 0.0) << QVector3D(0.5, 0.0, 0.0)
+	<< QVector3D(0.0, 0.0, 0.0) << QVector3D(0.0, 0.0, 0.5)
+	<< QVector3D(0.0, 0.0, 0.0) << QVector3D(0.0, 0.5, 0.0)
+	<< QVector3D(0.0, 0.0, 0.0) << QVector3D(0.5, 0.0, 0.0)
+	<< QVector3D(0.0, 0.0, 0.0) << QVector3D(0.0, 0.0, 0.5)
 	<< QVector3D(-1.0, 1.0, -1.0) << QVector3D(-1.0, 1.0, 1.0)
 	<< QVector3D(-1.0, 1.0, -1.0) << QVector3D(1.0, 1.0, -1.0)
 	<< QVector3D(-1.0, 1.0, -1.0) << QVector3D(-1.0, -1.0, -1.0)
@@ -71,7 +78,7 @@ void Viewer::setup_geometry() {
 	m_model.setToIdentity();
 	m_view.setToIdentity();
 	
-	m_model.scale(0.5);
+	// m_model.scale(0.5);
 
 }	
 
@@ -93,6 +100,87 @@ void Viewer::transform_points() {
 		draw_point.setY(temp_point.y());
 		points_2d.push_back(draw_point);
 	}
+}
+
+void Viewer::matrix_rotation(QMatrix4x4 &matrix, Qt::MouseButton mouse, const float angle) {
+	qreal data[16];
+	if (mouse == Qt::LeftButton) { // rotate on x-axis
+		data[0] = 1; // m11
+		data[1] = 0; // m12
+		data[2] = 0; // m13
+		data[4] = 0; // m21
+		data[5] = cos(angle * M_PI / 180.0); // m22
+		data[6] = -sin(angle * M_PI / 180.0); // m23
+		data[8] = 0; // m31
+		data[9] = sin(angle * M_PI / 180.0); // m32
+		data[10] = cos(angle * M_PI / 180.0); // m33
+	} else if (mouse == Qt::MidButton) {// rotate on y-axis
+		data[0] = cos(angle * M_PI / 180.0); // m11
+		data[1] = 0; // m12 
+		data[2] = sin(angle * M_PI / 180.0); // m13
+		data[4] = 0; // m21 
+		data[5] = 1; // m22 
+		data[6] = 0; // m23
+		data[8] = -sin(angle * M_PI / 180.0); // m31
+		data[9] = 0; // m32
+		data[10] = cos(angle * M_PI / 180.0); // m33
+	} else if (mouse == Qt::RightButton) {// rotate on z-axis
+		data[0] = cos(angle * M_PI / 180.0); // m11 
+        data[1] = -sin(angle * M_PI / 180.0); // m12 
+        data[2] = 0; // m13 
+        data[4] = sin(angle * M_PI / 180.0); // m21
+        data[5] = cos(angle * M_PI / 180.0); // m22
+        data[6] = 0; // m23 
+        data[8] = 0; // m31
+        data[9] = 0; // m32
+        data[10] = 1; // m33
+	} else {
+		data[0] = 0; 
+		data[1] = 0; 
+		data[2] = 0;
+		data[4] = 0;
+		data[5] = 0;
+		data[6] = 0;
+		data[8] = 0;
+		data[9] = 0;
+		data[10] = 0;
+	}
+	data[3] = 0;
+	data[7] = 0;
+	data[11] = 0;
+	data[12] = 0;
+	data[13] = 0;
+	data[14] = 0;
+	data[15] = 1;
+
+	QMatrix4x4 temp_matrix(data[0], data[1],data[2],data[3],data[4],data[5],data[6],data[7],data[8],data[9],data[10],data[11],data[12],data[13],data[14],data[15]);
+	matrix = matrix * temp_matrix;
+}
+
+void Viewer::matrix_translation(QMatrix4x4 &matrix, Qt::MouseButton mouse, const float distance) {
+	QMatrix4x4 temp_matrix;
+	temp_matrix.setToIdentity();
+	if (mouse == Qt::LeftButton) { //translate along the x-axis
+		temp_matrix.setColumn(3, QVector4D(distance/100.0, 0, 0, 1));
+	} else if (mouse == Qt::MidButton) {//translate along the y-axis
+		temp_matrix.setColumn(3, QVector4D(0, distance/100.0, 0, 1));
+	} else if (mouse == Qt::RightButton) {//translate along the z-axis
+		temp_matrix.setColumn(3, QVector4D(0, 0, distance/100.0, 1));
+	}	
+	matrix = matrix * temp_matrix;
+}
+
+void Viewer::matrix_scale(QMatrix4x4 &matrix, Qt::MouseButton mouse, const float factor) {
+	QMatrix4x4 temp_matrix;
+	temp_matrix.setToIdentity();
+	if (mouse == Qt::LeftButton) { //scale along the x-axis
+		temp_matrix.setColumn(0, QVector4D(1 + factor/100.0, 0, 0, 0));
+	} else if (mouse == Qt::MidButton) {//scale along the y-axis
+		temp_matrix.setColumn(1, QVector4D(0, 1 + factor/100.0, 0, 0));
+	} else if (mouse == Qt::RightButton) {//scale along the z-axis
+		temp_matrix.setColumn(2, QVector4D(0, 0, 1 + factor/100.0, 0));
+	}	
+	matrix = matrix * temp_matrix;
 }
 
 void Viewer::initializeGL() {
@@ -194,6 +282,7 @@ void Viewer::paintGL() {
 void Viewer::mousePressEvent ( QMouseEvent * event ) {
     std::cerr << "Stub: button " << event->button() << " pressed\n";
 	pressedMouseButton = event->button();
+	prePos = event->x();
 }
 
 void Viewer::mouseReleaseEvent ( QMouseEvent * event ) {
@@ -203,12 +292,12 @@ void Viewer::mouseReleaseEvent ( QMouseEvent * event ) {
 
 void Viewer::mouseMoveEvent ( QMouseEvent * event ) {
     std::cerr << "Stub: Motion at " << event->x() << ", " << event->y() << std::endl;
-	if (pressedMouseButton == Qt::LeftButton) {
-		m_model.rotate(event->x() - prePos, QVector3D(1, 0, 0));
-	} else if (pressedMouseButton == Qt::MidButton) {
-		m_model.rotate(event->x() - prePos, QVector3D(0, 1, 0));
-	} else if (pressedMouseButton == Qt::RightButton) {
-		m_model.rotate(event->x() - prePos, QVector3D(0, 0, 1));
+	if (mode == MODEL_ROTATE) {
+		matrix_rotation(m_model, pressedMouseButton, event->x() - prePos);
+	} else if (mode == MODEL_TRANSLATE) {
+		matrix_translation(m_model, pressedMouseButton, event->x() - prePos);
+	} else if (mode == MODEL_SCALE) {
+		matrix_scale(m_model, pressedMouseButton, event->x() - prePos);
 	}
 	prePos = event->x();
 	update();

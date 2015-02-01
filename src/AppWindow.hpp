@@ -24,6 +24,9 @@ private:
 
     std::vector<QAction*> m_menu_actions;
     Viewer* m_viewer;
+
+protected:
+	void keyPressEvent(QKeyEvent *event);
 };
 
 #endif

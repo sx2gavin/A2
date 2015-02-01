@@ -21,6 +21,20 @@ AppWindow::AppWindow() {
     createMenu();
 }
 
+void AppWindow::keyPressEvent(QKeyEvent *event) {
+	if (event->key() == Qt::Key_Escape) {
+		QCoreApplication::instance()->quit();
+	} else if (event->key() == Qt::Key_R) {
+		m_viewer->set_mode(MODEL_ROTATE);
+	} else if (event->key() == Qt::Key_T) {
+		m_viewer->set_mode(MODEL_TRANSLATE);
+	} else if (event->key() == Qt::Key_S) {
+		m_viewer->set_mode(MODEL_SCALE);
+	}
+
+}
+
+
 void AppWindow::createActions() {
     // Creates a new action for quiting and pushes it onto the menu actions vector 
     QAction* quitAct = new QAction(tr("&Quit"), this);
