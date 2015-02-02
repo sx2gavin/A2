@@ -79,13 +79,13 @@ protected:
 	void transform_points();
 
 	// Rotate Matrix
-	void matrix_rotation(QMatrix4x4 &matrix, Qt::MouseButton mouse,  const float angle);
+	void matrix_rotation(QMatrix4x4 &matrix, Qt::MouseButtons mouse,  const float angle);
 
 	// Translate Matrix
-	void matrix_translation(QMatrix4x4 &matrix, Qt::MouseButton mouse,  const float distance);
+	void matrix_translation(QMatrix4x4 &matrix, Qt::MouseButtons mouse,  const float distance);
 
 	// scale Matrix
-	void matrix_scale(QMatrix4x4 &matrix, Qt::MouseButton mouse, const float factor);	
+	void matrix_scale(QMatrix4x4 &matrix, Qt::MouseButtons  mouse, const float factor);	
 
 private:
 
@@ -102,10 +102,17 @@ private:
 
 	QVector<QVector3D> points_3d;
 	QVector<QVector2D> points_2d;
+	QVector<QVector2D> viewport;
 	
-	Qt::MouseButton pressedMouseButton;
+	Qt::MouseButtons pressedMouseButton;
 	int prePos;
 	Mode mode;
+	
+	// perspective
+	double fov;
+	double aspect;
+	double near;
+	double far;
     
     // *** Fill me in ***
     // You will want to declare some more matrices here
