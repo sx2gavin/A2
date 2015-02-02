@@ -112,6 +112,7 @@ private:
     QMatrix4x4 m_projection;    
 	QMatrix4x4 m_model;
 	QMatrix4x4 m_view;
+	QMatrix4x4 m_scale;
 };
 
 #endif

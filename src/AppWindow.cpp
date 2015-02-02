@@ -30,8 +30,11 @@ void AppWindow::keyPressEvent(QKeyEvent *event) {
 		m_viewer->set_mode(MODEL_TRANSLATE);
 	} else if (event->key() == Qt::Key_S) {
 		m_viewer->set_mode(MODEL_SCALE);
+	} else if (event->key() == Qt::Key_O) {
+		m_viewer->set_mode(VIEW_ROTATE);
+	} else if (event->key() == Qt::Key_N) {
+		m_viewer->set_mode(VIEW_TRANSLATE);
 	}
-
 }
 
 

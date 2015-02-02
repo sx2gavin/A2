@@ -41,7 +41,11 @@ QSize Viewer::sizeHint() const {
 void Viewer::set_perspective(double fov, double aspect,
                              double near, double far)
 {
-    // Fill me in!
+	double f = tan(M_PI_2 - fov * M_PI / 360.0);
+	m_projection.setColumn(0, QVector4D(f/aspect, 0.0, 0.0, 0.0));
+	m_projection.setColumn(1, QVector4D(0.0, f, 0.0, 0.0));
+	m_projection.setColumn(2, QVector4D(0.0, 0.0, (near+far)/(near-far), -1));
+	m_projection.setColumn(3, QVector4D(0.0, 0.0, 2 * (near * far)/(near-far), 0.0));
 }
 
 void Viewer::reset_view()
@@ -75,8 +79,10 @@ void Viewer::setup_geometry() {
 	<< QVector3D(1.0, -1.0, -1.0) << QVector3D(1.0, -1.0, 1.0);
 
 	m_projection.setToIdentity();
+	set_perspective(90.0, 1, -5, 10);
 	m_model.setToIdentity();
 	m_view.setToIdentity();
+	m_scale.setToIdentity();
 	
 	// m_model.scale(0.5);
 
@@ -88,14 +94,14 @@ void Viewer::transform_points() {
 	QVector3D temp_point;
 
 	for (int i = 0 ; i < 6; i++) {
-		temp_point = points_3d[i];
+		temp_point = m_projection * m_view * points_3d[i];
 		draw_point.setX(temp_point.x());
 		draw_point.setY(temp_point.y());
 		points_2d.push_back(draw_point);
 	}
 
 	for (int i = 6 ; i < points_3d.size(); i++) {
-		temp_point = m_model * points_3d[i];
+		temp_point = m_projection * m_view * m_model * m_scale * points_3d[i];
 		draw_point.setX(temp_point.x());
 		draw_point.setY(temp_point.y());
 		points_2d.push_back(draw_point);
@@ -297,8 +303,13 @@ void Viewer::mouseMoveEvent ( QMouseEvent * event ) {
 	} else if (mode == MODEL_TRANSLATE) {
 		matrix_translation(m_model, pressedMouseButton, event->x() - prePos);
 	} else if (mode == MODEL_SCALE) {
-		matrix_scale(m_model, pressedMouseButton, event->x() - prePos);
+		matrix_scale(m_scale, pressedMouseButton, event->x() - prePos);
+	} else if (mode == VIEW_ROTATE) {
+		matrix_rotation(m_view, pressedMouseButton, event->x() - prePos);
+	} else if (mode == VIEW_TRANSLATE) {
+		matrix_translation(m_view, pressedMouseButton, event->x() - prePos);
 	}
+
 	prePos = event->x();
 	update();
 
