@@ -50,7 +50,13 @@ void Viewer::set_perspective(double fov, double aspect,
 
 void Viewer::reset_view()
 {
-    // Fill me in!
+	m_projection.setToIdentity();
+	set_perspective(30.0, 1, 0, 10);
+	m_model.setToIdentity();
+	m_view.setToIdentity();
+	m_scale.setToIdentity();
+	set_mode(MODEL_ROTATE);
+	update();
 }
 
 void Viewer::set_mode(Mode mode) {
@@ -79,12 +85,10 @@ void Viewer::setup_geometry() {
 	<< QVector3D(1.0, -1.0, -1.0) << QVector3D(1.0, -1.0, 1.0);
 
 	m_projection.setToIdentity();
-	set_perspective(90.0, 1, -5, 10);
+	set_perspective(30.0, 1, 0, 10);
 	m_model.setToIdentity();
 	m_view.setToIdentity();
 	m_scale.setToIdentity();
-	
-	// m_model.scale(0.5);
 
 }	
 
@@ -93,15 +97,26 @@ void Viewer::transform_points() {
 	QVector2D draw_point;
 	QVector3D temp_point;
 
+	QMatrix4x4 invert_view = m_view.inverted();
+
+	// world coordinates axis
 	for (int i = 0 ; i < 6; i++) {
-		temp_point = m_projection * m_view * points_3d[i];
+		temp_point = m_projection * invert_view * points_3d[i];
 		draw_point.setX(temp_point.x());
 		draw_point.setY(temp_point.y());
 		points_2d.push_back(draw_point);
 	}
 
-	for (int i = 6 ; i < points_3d.size(); i++) {
-		temp_point = m_projection * m_view * m_model * m_scale * points_3d[i];
+	for (int i = 6; i < 12; i++) {
+		temp_point = m_projection * invert_view * m_model * points_3d[i];
+		draw_point.setX(temp_point.x());
+		draw_point.setY(temp_point.y());
+		points_2d.push_back(draw_point);
+	}
+
+	// box and model coordinates axis
+	for (int i = 12 ; i < points_3d.size(); i++) {
+		temp_point = m_projection * invert_view * m_model * m_scale * points_3d[i];
 		draw_point.setX(temp_point.x());
 		draw_point.setY(temp_point.y());
 		points_2d.push_back(draw_point);
@@ -263,25 +278,29 @@ void Viewer::paintGL() {
 	transform_points();
 
     // Here is where your drawing code should go.
-    
-    /* A few of lines are drawn below to show how it's done. */
-    set_colour(QColor(1.0, 1.0, 1.0));
+	
+	// draw the gnomon of the world
+	set_colour(QColor(1.0, 0.0, 0.0));	
+	for (int i = 0; i < 6; i+=2) {
+		draw_line(points_2d[i], points_2d[i+1]);
+	}
 
-	for (int i = 0; i < points_2d.size(); i+=2) {
+	// draw the gnomon of the box
+	set_colour(QColor(0.0, 1.0, 0.0));
+	for (int i = 6; i < 12; i+=2) {
+		draw_line(points_2d[i], points_2d[i+1]);
+	}
+
+	// draw the outline of the box
+    set_colour(QColor(1.0, 1.0, 1.0));
+	for (int i = 12; i < points_2d.size(); i+=2) {
 		draw_line(points_2d[i], points_2d[i+1]);
 	}
 		
-
-//    draw_line(QVector2D(-0.9, -0.9), 
-//              QVector2D(0.9, 0.9));
-//    draw_line(QVector2D(0.9, -0.9),
-//              QVector2D(-0.9, 0.9));
-//
-//    draw_line(QVector2D(-0.9, -0.9),
-//              QVector2D(-0.4, -0.9));
-//    draw_line(QVector2D(-0.9, -0.9), 
-//              QVector2D(-0.9, -0.4));
-	
+    draw_line(QVector2D(-0.9, -0.9),
+              QVector2D(-0.4, -0.9));
+    draw_line(QVector2D(-0.9, -0.9), 
+              QVector2D(-0.9, -0.4));
 
 }
 
@@ -308,6 +327,8 @@ void Viewer::mouseMoveEvent ( QMouseEvent * event ) {
 		matrix_rotation(m_view, pressedMouseButton, event->x() - prePos);
 	} else if (mode == VIEW_TRANSLATE) {
 		matrix_translation(m_view, pressedMouseButton, event->x() - prePos);
+	} else if (mode == VIEW_PERSPECTIVE) {
+	
 	}
 
 	prePos = event->x();
