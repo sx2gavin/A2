@@ -15,7 +15,7 @@
 #include <QGLBuffer>
 #endif
 
-enum Mode {VIEW_ROTATE, VIEW_TRANSLATE, VIEW_PERSPECTIVE, MODEL_ROTATE, MODEL_TRANSLATE, MODEL_SCALE};
+enum Mode {VIEW_ROTATE, VIEW_TRANSLATE, VIEW_PERSPECTIVE, MODEL_ROTATE, MODEL_TRANSLATE, MODEL_SCALE, VIEWPORT};
 
 class Viewer : public QGLWidget {
     
@@ -103,10 +103,19 @@ private:
 	QVector<QVector3D> points_3d;
 	QVector<QVector2D> points_2d;
 	QVector<QVector2D> viewport;
+	QVector<QVector2D> viewport_draw;
 	
 	Qt::MouseButtons pressedMouseButton;
 	int prePos;
 	Mode mode;
+
+	// viewport position
+	QVector2D start_point;
+	QVector2D end_point;
+	int viewport_top;
+	int viewport_bottom;
+	int viewport_left;
+	int viewport_right;
 	
 	// perspective
 	double fov;

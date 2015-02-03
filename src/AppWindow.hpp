@@ -23,6 +23,7 @@ private slots :
 	void mode_view_rotate();
 	void mode_view_translate();
 	void mode_view_perspective();
+	void mode_viewport();
 
 private:
     void createActions();

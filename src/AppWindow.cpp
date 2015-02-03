@@ -86,6 +86,12 @@ void AppWindow::createActions() {
     view_perspective_Act->setStatusTip(tr("View Perspective"));
     connect(view_perspective_Act, SIGNAL(triggered()), this, SLOT(mode_view_perspective()));
 
+	// set to viewport mode
+	QAction* viewport_Act = new QAction(tr("&Viewport"), this);
+    m_menu_mode_actions.push_back(viewport_Act);
+	viewport_Act->setShortcut(Qt::Key_V);
+    viewport_Act->setStatusTip(tr("Viewport"));
+    connect(viewport_Act, SIGNAL(triggered()), this, SLOT(mode_viewport()));
 }
 
 void AppWindow::createMenu() {
@@ -127,4 +133,8 @@ void AppWindow::mode_view_translate() {
 
 void AppWindow::mode_view_perspective() {
 	m_viewer->set_mode(VIEW_PERSPECTIVE);
+}
+
+void AppWindow::mode_viewport() {
+	m_viewer->set_mode(VIEWPORT);
 }

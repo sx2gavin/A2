@@ -21,12 +21,21 @@ Viewer::Viewer(const QGLFormat& format, QWidget *parent)
 #else 
     , mVertexBufferObject(QGLBuffer::VertexBuffer)
 #endif
-{
-	mode = MODEL_ROTATE;
+{	
+	viewport_top = 15;
+	viewport_bottom = 285;
+	viewport_left = 15;
+	viewport_right = 285;
 	fov = 30.0;
 	aspect = 1;
 	near = 0;
 	far = 10;
+	m_projection.setToIdentity();
+	set_perspective(fov, aspect, near, far);
+	m_model.setToIdentity();
+	m_view.setToIdentity();
+	m_scale.setToIdentity();
+	set_mode(MODEL_ROTATE);
 	setup_geometry();
 }
 
@@ -58,6 +67,11 @@ void Viewer::reset_view()
 	aspect = 1;
 	near = 0;
 	far = 10;
+	viewport_top = size().height() * 0.05;
+	viewport_bottom = size().height() * 0.95;
+	viewport_left = size().width() * 0.05;
+	viewport_right = size().width() * 0.95;
+
 	m_projection.setToIdentity();
 	set_perspective(fov, aspect, near, far);
 	m_model.setToIdentity();
@@ -101,19 +115,19 @@ void Viewer::setup_geometry() {
 	<< QVector2D(1.0, -1.0) << QVector2D(1.0, -0.4)
 	<< QVector2D(1.0, -1.0) << QVector2D(0.4, -1.0);
 
-
-	m_projection.setToIdentity();
-	set_perspective(fov, aspect, near, far);
-	m_model.setToIdentity();
-	m_view.setToIdentity();
-	m_scale.setToIdentity();
-
+	viewport_draw.resize(viewport.size());
 }	
 
 void Viewer::transform_points() {
 	points_2d.clear();
 	QVector2D draw_point;
 	QVector3D temp_point;
+	float win_l = size().width();
+	float view_l = viewport_right - viewport_left;
+	float win_h = size().height();
+	float view_h = viewport_bottom - viewport_top;
+	float left_gap = ((float)viewport_left + (float)viewport_right - win_l) / win_l;
+	float top_gap = ((float)viewport_top + (float)viewport_bottom - win_h) / win_h;
 
 	QMatrix4x4 invert_view = m_view.inverted();
 
@@ -125,6 +139,7 @@ void Viewer::transform_points() {
 		points_2d.push_back(draw_point);
 	}
 
+	// model coordinates axis
 	for (int i = 6; i < 12; i++) {
 		temp_point = m_projection * invert_view * m_model * points_3d[i];
 		draw_point.setX(temp_point.x());
@@ -132,13 +147,24 @@ void Viewer::transform_points() {
 		points_2d.push_back(draw_point);
 	}
 
-	// box and model coordinates axis
+	// box 
 	for (int i = 12 ; i < points_3d.size(); i++) {
 		temp_point = m_projection * invert_view * m_model * m_scale * points_3d[i];
 		draw_point.setX(temp_point.x());
 		draw_point.setY(temp_point.y());
 		points_2d.push_back(draw_point);
 	}
+
+	// viewport transformation
+	for (int i = 0; i < points_2d.size(); i++) {
+		points_2d[i].setX(view_l / win_l * points_2d[i].x() + left_gap );
+		points_2d[i].setY(view_h / win_h * points_2d[i].y() - top_gap);
+	}
+
+	for (int i = 0; i < viewport.size(); i++) {
+		viewport_draw[i].setX(view_l / win_l * viewport[i].x() + left_gap);
+		viewport_draw[i].setY(view_h / win_h * viewport[i].y() - top_gap);
+	}	
 }
 
 void Viewer::matrix_rotation(QMatrix4x4 &matrix, Qt::MouseButtons mouse, const float angle) {
@@ -317,8 +343,8 @@ void Viewer::paintGL() {
 		draw_line(points_2d[i], points_2d[i+1]);
 	}
 	
-	for (int i = 0; i < viewport.size(); i+=2) {
-		draw_line(viewport[i], viewport[i+1]);
+	for (int i = 0; i < viewport_draw.size(); i+=2) {
+		draw_line(viewport_draw[i], viewport_draw[i+1]);
 	}
 }
 
@@ -326,10 +352,31 @@ void Viewer::mousePressEvent ( QMouseEvent * event ) {
     std::cerr << "Stub: button " << event->button() << " pressed\n";
 	pressedMouseButton = event->buttons();
 	prePos = event->x();
+	if (mode == VIEWPORT && event->button() == Qt::LeftButton) {
+		start_point.setX(event->x());
+		start_point.setY(event->y());
+	}
 }
 
 void Viewer::mouseReleaseEvent ( QMouseEvent * event ) {
     std::cerr << "Stub: button " << event->button() << " released\n";
+	if (mode == VIEWPORT && event->button() == Qt::LeftButton) {
+		end_point.setX(event->x());
+		end_point.setY(event->y());
+
+		viewport_top = start_point.y() < end_point.y() ? start_point.y():end_point.y();
+		viewport_bottom = start_point.y() > end_point.y() ? start_point.y():end_point.y();
+		viewport_left = start_point.x() < end_point.x() ? start_point.x():end_point.x();
+		viewport_right = start_point.x() > end_point.x() ? start_point.x():end_point.x();
+		
+		viewport_top = viewport_top < 0 ? 0 : viewport_top;
+		viewport_bottom = viewport_bottom > size().height() ? size().height() : viewport_bottom;
+		viewport_left = viewport_left < 0 ? 0 : viewport_left;
+		viewport_right = viewport_right > size().width() ? size().width() : viewport_right;
+
+		update();
+
+	}
 	pressedMouseButton = Qt::NoButton;
 }
 
@@ -361,7 +408,7 @@ void Viewer::mouseMoveEvent ( QMouseEvent * event ) {
 			far = far + event->x() - prePos;
 		}
 		set_perspective(fov, aspect, near, far);
-	}
+	}	
 
 	prePos = event->x();
 	update();
