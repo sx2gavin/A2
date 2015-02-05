@@ -87,6 +87,9 @@ protected:
 	// scale Matrix
 	void matrix_scale(QMatrix4x4 &matrix, Qt::MouseButtons  mouse, const float factor);	
 
+	//clip line segments inside near and far planes.
+	void clip_near_far(const QVector<QVector3D> input_points, QVector<QVector3D> output_points, double near, double far);  	
+
 private:
 
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 1, 0))

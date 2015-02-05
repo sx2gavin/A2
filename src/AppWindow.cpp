@@ -92,6 +92,24 @@ void AppWindow::createActions() {
 	viewport_Act->setShortcut(Qt::Key_V);
     viewport_Act->setStatusTip(tr("Viewport"));
     connect(viewport_Act, SIGNAL(triggered()), this, SLOT(mode_viewport()));
+
+	QActionGroup* modeGroup = new QActionGroup(this);
+	model_rotate_Act->setCheckable(true);
+	model_translate_Act->setCheckable(true);
+	model_scale_Act->setCheckable(true);
+	view_rotation_Act->setCheckable(true);
+	view_translate_Act->setCheckable(true);
+	view_perspective_Act->setCheckable(true);
+	viewport_Act->setCheckable(true);
+	model_rotate_Act->setChecked(true);
+	
+	model_rotate_Act->setActionGroup(modeGroup);
+	model_translate_Act->setActionGroup(modeGroup);
+	model_scale_Act->setActionGroup(modeGroup);
+	view_rotation_Act->setActionGroup(modeGroup);
+	view_translate_Act->setActionGroup(modeGroup);
+	view_perspective_Act->setActionGroup(modeGroup);
+	viewport_Act->setActionGroup(modeGroup);
 }
 
 void AppWindow::createMenu() {

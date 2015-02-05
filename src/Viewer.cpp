@@ -34,6 +34,7 @@ Viewer::Viewer(const QGLFormat& format, QWidget *parent)
 	set_perspective(fov, aspect, near, far);
 	m_model.setToIdentity();
 	m_view.setToIdentity();
+	matrix_translation(m_view, Qt::RightButton, 500);
 	m_scale.setToIdentity();
 	set_mode(MODEL_ROTATE);
 	setup_geometry();
@@ -76,6 +77,7 @@ void Viewer::reset_view()
 	set_perspective(fov, aspect, near, far);
 	m_model.setToIdentity();
 	m_view.setToIdentity();
+	matrix_translation(m_view, Qt::RightButton, 500);
 	m_scale.setToIdentity();
 	set_mode(MODEL_ROTATE);
 	update();
@@ -121,7 +123,8 @@ void Viewer::setup_geometry() {
 void Viewer::transform_points() {
 	points_2d.clear();
 	QVector2D draw_point;
-	QVector3D temp_point;
+	QVector<QVector3D> temp_points;
+	QVector<QVector3D> output_points;
 	float win_l = size().width();
 	float view_l = viewport_right - viewport_left;
 	float win_h = size().height();
@@ -133,26 +136,29 @@ void Viewer::transform_points() {
 
 	// world coordinates axis
 	for (int i = 0 ; i < 6; i++) {
-		temp_point = m_projection * invert_view * points_3d[i];
-		draw_point.setX(temp_point.x());
-		draw_point.setY(temp_point.y());
-		points_2d.push_back(draw_point);
+		temp_points.push_back(invert_view * points_3d[i]);
 	}
 
 	// model coordinates axis
 	for (int i = 6; i < 12; i++) {
-		temp_point = m_projection * invert_view * m_model * points_3d[i];
-		draw_point.setX(temp_point.x());
-		draw_point.setY(temp_point.y());
-		points_2d.push_back(draw_point);
+		temp_points.push_back(invert_view * m_model * points_3d[i]);
 	}
 
 	// box 
 	for (int i = 12 ; i < points_3d.size(); i++) {
-		temp_point = m_projection * invert_view * m_model * m_scale * points_3d[i];
-		draw_point.setX(temp_point.x());
-		draw_point.setY(temp_point.y());
-		points_2d.push_back(draw_point);
+		temp_points.push_back(invert_view * m_model * m_scale * points_3d[i]);
+	}
+
+// 	clip_near_far(temp_points, output_points, near, far);
+
+//	for (int i = 0; i < output_points.size(); i++) {
+//		output_points[i] = m_projection * output_points[i];
+//		points_2d.push_back(QVector2D(output_points[i].x(), output_points[i].y()));
+//	}
+
+	for (int i = 0; i < temp_points.size(); i++) {
+		temp_points[i] = m_projection * temp_points[i];
+		points_2d.push_back(QVector2D(temp_points[i].x(), temp_points[i].y()));
 	}
 
 	// viewport transformation
@@ -249,6 +255,56 @@ void Viewer::matrix_scale(QMatrix4x4 &matrix, Qt::MouseButtons mouse, const floa
 	}	
 	matrix = matrix * temp_matrix;
 }
+
+void Viewer::clip_near_far(QVector<QVector3D> input_points, QVector<QVector3D> output_points, double near, double far) {
+	QVector3D normalNear(0.0, 0.0, 1.0);
+	QVector3D normalFar(0.0, 0.0, -1.0);
+	QVector3D a;
+	QVector3D b;
+	float wecA;
+	float wecB;
+	float t;
+	QVector3D pNear(0.0, 0.0, -near);
+	QVector3D pFar(0.0, 0.0, -far);
+
+	for (int i = 0; i < input_points.size(); i+=2) {
+		a = input_points[i];
+		b = input_points[i+1];
+		// comparing to near plane
+		wecA = QVector3D::dotProduct((a - pNear), normalNear);
+		wecB = QVector3D::dotProduct((b - pNear), normalNear);
+
+		if (wecA < 0 && wecB < 0) continue;
+		if (wecA >= 0 && wecB >= 0) {}
+		else {
+			t = wecA / (wecA - wecB);
+			if ( wecA < 0) {
+				a = a + t * (b - a);
+			} else {
+				b = b + t * (b - a);
+			}			
+		}
+		// comparing to far plane
+		wecA = QVector3D::dotProduct((a - pFar), normalFar);
+		wecB = QVector3D::dotProduct((b - pFar), normalFar);
+
+		if (wecA < 0 && wecB < 0) continue;
+		if (wecA >= 0 && wecB >=0) {
+			output_points.push_back(a);
+			output_points.push_back(b);
+			continue;
+		}
+
+		t = wecA / (wecA - wecB);
+		if ( wecA < 0) {
+			a = a + t * (b - a);
+		} else {
+			b = b + t * (b - a);
+		}			
+		output_points.push_back(a);
+		output_points.push_back(b);
+	}	
+}	
 
 void Viewer::initializeGL() {
     // Do some OpenGL setup
