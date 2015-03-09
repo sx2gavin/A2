@@ -3,4 +3,4 @@
 Instructions:
 
   in a linux terminal, run the program by typing
-    > $ ./src/a2
+> $ ./src/a2
